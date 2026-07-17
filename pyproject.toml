@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "wifi-webview-debugger"
+version = "0.1.0"
+description = "Serve a local build to a LAN device over an HTTP proxy with real-cert TLS, plus an injected debug toolbar and mobile DevTools (eruda)."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "shawtung", email = "shawtungsjtu@gmail.com" }]
+keywords = ["proxy", "webview", "devtools", "tls", "lan", "mobile", "debug", "caddy"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Software Development :: Debuggers",
+]
+# 纯标准库，无 pip 依赖。外部二进制依赖(caddy / openssl)在运行时检查。
+dependencies = []
+
+[project.scripts]
+wifi-webview-debugger = "wifi_webview_debugger.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wifi_webview_debugger"]
+
+# 把内置资产(eruda.js)一并打进 wheel
+[tool.hatch.build.targets.wheel.force-include]
+"src/wifi_webview_debugger/assets/eruda.js" = "wifi_webview_debugger/assets/eruda.js"

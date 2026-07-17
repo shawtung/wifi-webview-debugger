@@ -1,0 +1,11 @@
+# 构建产物
+/dist/
+build/
+dist/*.whl
+dist/*.tar.gz
+*.egg-info/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+.venv/
