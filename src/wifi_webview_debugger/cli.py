@@ -214,18 +214,22 @@ def parse_args(argv):
     )
     p.add_argument(
         "--backend",
-        default="",
+        default=argparse.SUPPRESS,
         help="反代到本地服务(如 127.0.0.1:3000)，设了就不服务 dist",
     )
     p.add_argument(
         "--hosts",
-        default="",
+        default=argparse.SUPPRESS,
         help="手动指定要拦的域名(空格/逗号分隔)，默认自动从证书 SAN 推断",
     )
-    p.add_argument("--iface", default="", help="取本机 IP 的网卡，默认自动检测 Wi-Fi")
+    p.add_argument(
+        "--iface",
+        default=argparse.SUPPRESS,
+        help="取本机 IP 的网卡，默认自动检测 Wi-Fi",
+    )
     p.add_argument(
         "--probe",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         default=True,
         help="注入调试工具条(刷新/自动刷新/传截图) + eruda 移动端 DevTools",
     )
