@@ -11,7 +11,6 @@
 
 环境变量：
   INTERCEPT_HOSTS  要劫持的域名，空格或逗号分隔（优先）
-  INTERCEPT_HOST   单个域名（INTERCEPT_HOSTS 未设时的回退）
   LOCAL_HOST       本机 Caddy 地址（默认 127.0.0.1）
   LOCAL_PORT       本机 Caddy 端口（默认 443）
   LISTEN           监听地址:端口（默认 0.0.0.0:8080）
@@ -21,7 +20,7 @@ import select
 import socket
 import threading
 
-_hosts = os.environ.get("INTERCEPT_HOSTS") or os.environ.get("INTERCEPT_HOST", "")
+_hosts = os.environ.get("INTERCEPT_HOSTS", "")
 INTERCEPT_HOSTS = set(h for h in _hosts.replace(",", " ").split() if h)
 LOCAL_HOST = os.environ.get("LOCAL_HOST", "127.0.0.1")
 LOCAL_PORT = int(os.environ.get("LOCAL_PORT", "443"))

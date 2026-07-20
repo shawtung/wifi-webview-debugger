@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wifi-webview-debugger"
-version = "0.1.0"
+version = "0.1.1"
 description = "Serve a local build to a LAN device over an HTTP proxy with real-cert TLS, plus an injected debug toolbar and mobile DevTools (eruda)."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -23,6 +23,9 @@ dependencies = []
 
 [project.scripts]
 wifi-webview-debugger = "wifi_webview_debugger.cli:main"
+
+[project.urls]
+Repository = "https://github.com/shawtung/wifi-webview-debugger"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wifi_webview_debugger"]

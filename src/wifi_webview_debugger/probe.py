@@ -24,13 +24,13 @@ import urllib.parse
 
 DIST = os.path.abspath(os.environ.get("DIST", os.path.join(os.getcwd(), "dist")))
 PORT = int(os.environ.get("PORT", "3777"))
-SHOTS = os.path.abspath(os.environ.get("SHOTS", os.path.join(os.getcwd(), "shots")))
+SHOTS = os.path.abspath(os.environ.get("SHOTS", os.path.join(os.getcwd(), ".wifi-webview-debugger/shots")))
 os.makedirs(SHOTS, exist_ok=True)
 
 # eruda 从打包内置的资产读取(离线可用)
 ERUDA_BYTES = pkgutil.get_data("wifi_webview_debugger", "assets/eruda.js") or b""
 
-# 注入的工具条：只用旧版浏览器也支持的语法(fetch/var/function，无 ??= 等)
+# 注入的工具条：只用旧版浏览器也支持的语法(fetch/var/function)
 TOOLBAR = """
 <script>
 (function(){

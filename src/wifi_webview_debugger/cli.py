@@ -10,6 +10,7 @@ Caddy 为每个域名建一个 site 块、各用自己的证书，按 SNI 分流
 所有可写文件都落在当前工作目录：certs/、dist/ 为输入；shots/ 存截图；
 .wifi-webview-debugger/ 存 Caddy 生成配置与数据目录。
 """
+
 import os
 import re
 import sys
@@ -23,7 +24,13 @@ from shutil import which
 
 from . import __version__
 
-GREEN, CYAN, RED, YELLOW, RESET = "\033[32m", "\033[36m", "\033[31m", "\033[33m", "\033[0m"
+GREEN, CYAN, RED, YELLOW, RESET = (
+    "\033[32m",
+    "\033[36m",
+    "\033[31m",
+    "\033[33m",
+    "\033[0m",
+)
 
 # 运行期配置（在 main() 里由命令行参数/环境变量填充）
 CFG = {}
@@ -51,7 +58,9 @@ def run(cmd):
 
 
 def cert_sans(path):
-    out = run(["openssl", "x509", "-in", path, "-noout", "-ext", "subjectAltName"]).stdout
+    out = run(
+        ["openssl", "x509", "-in", path, "-noout", "-ext", "subjectAltName"]
+    ).stdout
     return re.findall(r"DNS:([^,\s]+)", out)
 
 
@@ -114,8 +123,16 @@ def scan_certs():
 
 def gen_caddyfile(hosts):
     # log_credentials: 关闭 Caddy 对 Authorization/Cookie 等头的默认脱敏，方便本地调试看全请求
-    L = ["{", "\tadmin off", "\tauto_https disable_redirects",
-         "\tservers {", "\t\tlog_credentials", "\t}", "}", ""]
+    L = [
+        "{",
+        "\tadmin off",
+        "\tauto_https disable_redirects",
+        "\tservers {",
+        "\t\tlog_credentials",
+        "\t}",
+        "}",
+        "",
+    ]
     for host, (cert, key) in hosts.items():
         L.append("%s:%d {" % (host, CFG["caddy_port"]))
         L.append("\ttls %s %s" % (cert, key))
@@ -179,35 +196,42 @@ def cleanup():
 
 
 def parse_args(argv):
-    def env(name, default):
-        v = os.environ.get(name, "").strip()
-        return v if v else default
-
     p = argparse.ArgumentParser(
         prog="wifi-webview-debugger",
         description="把本地构建通过 HTTP 代理 + 真证书 TLS 投送到同网段设备，附带调试工具条与 eruda。",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("-V", "--version", action="version",
-                   version="%(prog)s " + __version__)
-    p.add_argument("--certs", default=env("CERTS_DIR", os.path.join(os.getcwd(), "certs")),
-                   help="证书目录(内含 证书+私钥 成对文件)")
-    p.add_argument("--dist", default=env("DIST", os.path.join(os.getcwd(), "dist")),
-                   help="要服务的静态构建目录")
-    p.add_argument("--backend", default=env("BACKEND", ""),
-                   help="反代到本地服务(如 127.0.0.1:3000)，设了就不服务 dist")
-    p.add_argument("--hosts", default=env("INTERCEPT_HOSTS", ""),
-                   help="手动指定要拦的域名(空格/逗号分隔)，默认自动从证书 SAN 推断")
-    p.add_argument("--iface", default=env("IFACE", ""),
-                   help="取本机 IP 的网卡，默认自动检测 Wi-Fi")
-    p.add_argument("--probe", action="store_true", default=bool(env("PROBE", "")),
-                   help="注入调试工具条(刷新/自动刷新/传截图) + eruda 移动端 DevTools")
-    p.add_argument("--proxy-port", type=int, default=int(env("PROXY_PORT", "8080")),
-                   help="代理监听端口")
-    p.add_argument("--caddy-port", type=int, default=int(env("CADDY_PORT", "8443")),
-                   help="Caddy 监听端口")
-    p.add_argument("--probe-port", type=int, default=int(env("PROBE_PORT", "3777")),
-                   help="工具条服务端口")
+    p.add_argument(
+        "-V", "--version", action="version", version="%(prog)s " + __version__
+    )
+    p.add_argument(
+        "--certs",
+        default=os.path.join(os.getcwd(), "certs"),
+        help="证书目录(内含 证书+私钥 成对文件)",
+    )
+    p.add_argument(
+        "--dist", default=os.path.join(os.getcwd(), "dist"), help="要服务的静态构建目录"
+    )
+    p.add_argument(
+        "--backend",
+        default="",
+        help="反代到本地服务(如 127.0.0.1:3000)，设了就不服务 dist",
+    )
+    p.add_argument(
+        "--hosts",
+        default="",
+        help="手动指定要拦的域名(空格/逗号分隔)，默认自动从证书 SAN 推断",
+    )
+    p.add_argument("--iface", default="", help="取本机 IP 的网卡，默认自动检测 Wi-Fi")
+    p.add_argument(
+        "--probe",
+        action="store_true",
+        default=True,
+        help="注入调试工具条(刷新/自动刷新/传截图) + eruda 移动端 DevTools",
+    )
+    p.add_argument("--proxy-port", type=int, default=8080, help="代理监听端口")
+    p.add_argument("--caddy-port", type=int, default=8443, help="Caddy 监听端口")
+    p.add_argument("--probe-port", type=int, default=3777, help="工具条服务端口")
     return p.parse_args(argv)
 
 
@@ -216,27 +240,31 @@ def main(argv=None):
 
     cwd = os.getcwd()
     work = os.path.join(cwd, ".wifi-webview-debugger")
-    CFG.update({
-        "certs_dir": os.path.abspath(args.certs),
-        "dist": os.path.abspath(args.dist),
-        "backend": args.backend.strip(),
-        "iface": args.iface.strip(),
-        "probe": args.probe,
-        "proxy_port": args.proxy_port,
-        "caddy_port": args.caddy_port,
-        "probe_port": args.probe_port,
-        "work": work,
-        "gen_caddyfile": os.path.join(work, "caddy.generated"),
-        "caddy_data": os.path.join(work, "caddy-data"),
-        "shots": os.path.join(cwd, "shots"),
-    })
+    CFG.update(
+        {
+            "certs_dir": os.path.abspath(args.certs),
+            "dist": os.path.abspath(args.dist),
+            "backend": args.backend.strip(),
+            "iface": args.iface.strip(),
+            "probe": args.probe,
+            "proxy_port": args.proxy_port,
+            "caddy_port": args.caddy_port,
+            "probe_port": args.probe_port,
+            "work": work,
+            "gen_caddyfile": os.path.join(work, "caddy.generated"),
+            "caddy_data": os.path.join(work, "caddy-data"),
+            "shots": os.path.join(work, "shots"),
+        }
+    )
 
     # 端口 < 1024 才需要 root（默认 8443/8080 免 sudo）
     if (CFG["caddy_port"] < 1024 or CFG["proxy_port"] < 1024) and os.geteuid() != 0:
         die("--caddy-port/--proxy-port < 1024 需要 root：请用 sudo，或用默认高端口")
 
     if not which("caddy"):
-        die("未找到 caddy，请先安装： brew install caddy  /  https://caddyserver.com/docs/install")
+        die(
+            "未找到 caddy，请先安装： brew install caddy  /  https://caddyserver.com/docs/install"
+        )
 
     # openssl：仅用于读取证书的 SAN 域名与到期时间（系统一般自带）
     if not which("openssl"):
@@ -249,19 +277,25 @@ def main(argv=None):
         probe_serves_dist = True
 
     if (not CFG["backend"] or probe_serves_dist) and not os.path.isdir(CFG["dist"]):
-        die("缺少构建目录 %s ，请先构建，或用 --backend 127.0.0.1:3000 反代" % CFG["dist"])
+        die(
+            "缺少构建目录 %s ，请先构建，或用 --backend 127.0.0.1:3000 反代"
+            % CFG["dist"]
+        )
 
     if not os.path.isdir(CFG["certs_dir"]):
-        die("缺少证书目录 %s ，请用 --certs 指定，目录里放 证书+私钥 成对文件" % CFG["certs_dir"])
+        die(
+            "缺少证书目录 %s ，请用 --certs 指定，目录里放 证书+私钥 成对文件"
+            % CFG["certs_dir"]
+        )
 
     # 决定要拦的域名
     hosts_env = args.hosts.strip()
     if hosts_env:
         want = [h for h in hosts_env.replace(",", " ").split() if h]
-        allmap = scan_certs()
+        all_map = scan_certs()
         hosts = {}
         for h in want:
-            match = allmap.get(h)
+            match = all_map.get(h)
             if not match:
                 die("%s 里没有覆盖 %s 的证书" % (CFG["certs_dir"], h))
             hosts[h] = match
@@ -273,7 +307,9 @@ def main(argv=None):
 
     ok("将拦截 %d 个域名：" % len(hosts))
     for h, (cert, key) in hosts.items():
-        info("  %-34s 证书 %s  到期 %s" % (h, os.path.basename(cert), cert_enddate(cert)))
+        info(
+            "  %-34s 证书 %s  到期 %s" % (h, os.path.basename(cert), cert_enddate(cert))
+        )
 
     iface = CFG["iface"] or detect_wifi_iface()
     ip = iface_ip(iface)
@@ -303,15 +339,30 @@ def main(argv=None):
     # 起 probe-server(可选)
     if probe_serves_dist:
         os.makedirs(CFG["shots"], exist_ok=True)
-        spawn([sys.executable, "-m", "wifi_webview_debugger.probe"],
-              env={"DIST": CFG["dist"], "PORT": str(CFG["probe_port"]), "SHOTS": CFG["shots"]})
+        spawn(
+            [sys.executable, "-m", "wifi_webview_debugger.probe"],
+            env={
+                "DIST": CFG["dist"],
+                "PORT": str(CFG["probe_port"]),
+                "SHOTS": CFG["shots"],
+            },
+        )
         time.sleep(1)
-        ok("工具条 + eruda 已启用(刷新 / 自动刷新 / 传截图 / DevTools)，截图存到 %s" % CFG["shots"])
+        ok(
+            "工具条 + eruda 已启用(刷新 / 自动刷新 / 传截图 / DevTools)，截图存到 %s"
+            % CFG["shots"]
+        )
 
     # 起代理(多 host)
-    spawn([sys.executable, "-m", "wifi_webview_debugger.proxy"],
-          env={"INTERCEPT_HOSTS": " ".join(hosts.keys()), "LOCAL_HOST": "127.0.0.1",
-               "LOCAL_PORT": str(CFG["caddy_port"]), "LISTEN": "0.0.0.0:%d" % CFG["proxy_port"]})
+    spawn(
+        [sys.executable, "-m", "wifi_webview_debugger.proxy"],
+        env={
+            "INTERCEPT_HOSTS": " ".join(hosts.keys()),
+            "LOCAL_HOST": "127.0.0.1",
+            "LOCAL_PORT": str(CFG["caddy_port"]),
+            "LISTEN": "0.0.0.0:%d" % CFG["proxy_port"],
+        },
+    )
     time.sleep(1)
 
     print()
@@ -333,7 +384,10 @@ def main(argv=None):
     # Caddy 数据目录用工作目录内的，避免依赖被 sudo 占为 root 的 ~/Library/.../Caddy
     env = {"XDG_DATA_HOME": CFG["caddy_data"]}
     os.makedirs(CFG["caddy_data"], exist_ok=True)
-    caddy = spawn(["caddy", "run", "--config", CFG["gen_caddyfile"], "--adapter", "caddyfile"], env=env)
+    caddy = spawn(
+        ["caddy", "run", "--config", CFG["gen_caddyfile"], "--adapter", "caddyfile"],
+        env=env,
+    )
     caddy.wait()
 
 
