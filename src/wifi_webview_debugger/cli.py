@@ -248,8 +248,8 @@ def main(argv=None):
         {
             "certs_dir": os.path.abspath(args.certs),
             "dist": os.path.abspath(args.dist),
-            "backend": args.backend.strip(),
-            "iface": args.iface.strip(),
+            "backend": args.backend.strip() if hasattr(args, 'backend') else None,
+            "iface": args.iface.strip() if hasattr(args, 'iface') else None,
             "probe": args.probe,
             "proxy_port": args.proxy_port,
             "caddy_port": args.caddy_port,
@@ -293,7 +293,7 @@ def main(argv=None):
         )
 
     # 决定要拦的域名
-    hosts_env = args.hosts.strip()
+    hosts_env = args.hosts.strip() if hasattr(args, 'hosts') else None
     if hosts_env:
         want = [h for h in hosts_env.replace(",", " ").split() if h]
         all_map = scan_certs()
