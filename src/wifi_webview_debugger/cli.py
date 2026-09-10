@@ -21,8 +21,9 @@ import atexit
 import argparse
 import subprocess
 from shutil import which
+from importlib.metadata import version
 
-from . import __version__
+__version__ = version("wifi-webview-debugger")
 
 GREEN, CYAN, RED, YELLOW, RESET = (
     "\033[32m",
